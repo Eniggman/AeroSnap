@@ -1,0 +1,415 @@
+/* =========================================================
+   AEROSNAP - FRUTIGER AERO & LIQUID GLASS DESIGN SYSTEM
+   ========================================================= */
+
+:root {
+  /* Frutiger Aero Palette */
+  --bg-gradient: radial-gradient(circle at 20% 10%, #e8f7ff 0%, #ccebff 45%, #9edaff 100%);
+  --sidebar-bg: rgba(255, 255, 255, 0.55);
+  --panel-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 10px 30px rgba(0, 80, 160, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  --aero-blue: #0088ff;
+  --aero-cyan: #00d2ff;
+  --aero-gradient: linear-gradient(180deg, #38bdf8 0%, #0284c7 60%, #0369a1 100%);
+  --aero-gloss: linear-gradient(180deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.15) 50%, rgba(0,140,255,0.08) 100%);
+  
+  --text-main: #14284b;
+  --text-muted: #476282;
+  --input-bg: rgba(255, 255, 255, 0.9);
+  --input-border: #b8dcff;
+  --input-focus: #0088ff;
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+  --radius-pill: 9999px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  background: var(--bg-gradient);
+  color: var(--text-main);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  background-attachment: fixed;
+}
+
+/* Glass App Container */
+.app-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Sidebar with Liquid Aero Glass */
+.sidebar {
+  width: 230px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: 2px 0 20px rgba(0, 100, 200, 0.08);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 12px;
+  gap: 8px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 20px 12px;
+  border-bottom: 1px solid rgba(0, 140, 255, 0.15);
+  margin-bottom: 8px;
+}
+
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 180, 255, 0.35), inset 0 1px 1px #fff;
+  color: white;
+  font-size: 18px;
+}
+
+.brand-title {
+  font-size: 19px;
+  font-weight: 700;
+  background: linear-gradient(180deg, #0284c7 0%, #0c4a6e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+/* Nav Item (Liquid Glass Pill) */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-radius: var(--radius-md);
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.nav-item svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: #0088ff;
+  transition: transform 0.2s ease;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateX(3px);
+  box-shadow: 0 4px 12px rgba(0, 140, 255, 0.1);
+}
+
+.nav-item.active {
+  background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 100%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 14px rgba(0, 120, 240, 0.16), inset 0 1px 2px #ffffff;
+  color: #0369a1;
+  font-weight: 600;
+}
+
+.nav-item.active svg {
+  color: #0284c7;
+  transform: scale(1.1);
+}
+
+/* Main Content Panel */
+.content-area {
+  flex: 1;
+  background: var(--panel-bg);
+  padding: 36px 42px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.tab-content {
+  display: none;
+  max-width: 680px;
+  animation: fadeIn 0.22s ease-out;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 24px;
+  letter-spacing: -0.4px;
+}
+
+/* Form Groups & Rows */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  font-size: 14.5px;
+  color: var(--text-main);
+}
+
+.checkbox-row input[type="checkbox"] {
+  appearance: none;
+  width: 19px;
+  height: 19px;
+  border: 1.5px solid #a0cbf7;
+  border-radius: 5px;
+  background: white;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.checkbox-row input[type="checkbox"]:checked {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  border-color: #0284c7;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+}
+
+.checkbox-row input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2.2px 2.2px 0;
+  transform: rotate(45deg);
+}
+
+.help-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  color: #475569;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: help;
+  transition: background 0.15s ease;
+}
+
+.help-tip:hover {
+  background: #0284c7;
+  color: white;
+}
+
+/* Row with Label & Control */
+.control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 18px;
+}
+
+.control-label {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--text-main);
+  flex: 1;
+}
+
+/* Frutiger Dropdowns */
+.aero-select {
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text-main);
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 100, 200, 0.06), inset 0 1px 1px #fff;
+  transition: all 0.2s ease;
+  min-width: 220px;
+}
+
+.aero-select:focus {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px rgba(0, 136, 255, 0.25);
+}
+
+/* Hotkey Input Box */
+.hotkey-wrapper {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  padding: 4px 8px 4px 14px;
+  width: 220px;
+  box-shadow: 0 2px 5px rgba(0, 100, 200, 0.05), inset 0 1px 2px rgba(0,0,0,0.03);
+  transition: border-color 0.2s ease;
+}
+
+.hotkey-wrapper:focus-within {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px rgba(0, 136, 255, 0.22);
+}
+
+.hotkey-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0369a1;
+  flex: 1;
+  width: 100%;
+  cursor: pointer;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.clear-btn:hover {
+  color: #ef4444;
+  background: #fee2e2;
+}
+
+/* Path Picker Row */
+.path-picker-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.path-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--input-border);
+  background: white;
+  font-size: 13.5px;
+  color: var(--text-main);
+  outline: none;
+}
+
+/* Glass Buttons */
+.btn-glass {
+  background: linear-gradient(180deg, #ffffff 0%, #e6f4ff 100%);
+  border: 1px solid #bce0fd;
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0284c7;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 140, 255, 0.12), inset 0 1px 1px #ffffff;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-glass:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #cbe9fe 100%);
+  border-color: #7dd3fc;
+  box-shadow: 0 4px 10px rgba(0, 140, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.btn-glass:active {
+  transform: translateY(0);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  border: 1px solid #0284c7;
+  color: white;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(180deg, #7dd3fc 0%, #0369a1 100%);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.4);
+}
+
+/* Status Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.25s ease;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}

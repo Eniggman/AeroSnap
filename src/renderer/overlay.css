@@ -1,0 +1,635 @@
+/* =========================================================
+   AEROSNAP OVERLAY & ANNOTATIONS CSS (FRUTIGER AERO GLASS)
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.001); /* CRITICAL for Windows hit-testing */
+  cursor: crosshair;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+#base-canvas, #draw-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: auto;
+}
+
+#draw-canvas {
+  z-index: 10;
+}
+
+/* Active Selection Box */
+.selection-box {
+  position: absolute;
+  border: 2px dashed #00d2ff;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45), 0 0 15px rgba(0, 210, 255, 0.5);
+  pointer-events: auto;
+  cursor: move;
+  z-index: 50;
+  background: transparent;
+}
+
+.selection-box.hidden {
+  display: none;
+}
+
+/* Dimension Badge */
+.dimension-badge {
+  position: absolute;
+  top: -28px;
+  left: 0;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  color: #38bdf8;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* 8 Resize Handles */
+.handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: #ffffff;
+  border: 1.5px solid #0284c7;
+  border-radius: 2px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  z-index: 60;
+}
+
+.handle.nw { top: -5px; left: -5px; cursor: nwse-resize; }
+.handle.n  { top: -5px; left: calc(50% - 4.5px); cursor: ns-resize; }
+.handle.ne { top: -5px; right: -5px; cursor: nesw-resize; }
+.handle.e  { top: calc(50% - 4.5px); right: -5px; cursor: ew-resize; }
+.handle.se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+.handle.s  { bottom: -5px; left: calc(50% - 4.5px); cursor: ns-resize; }
+.handle.sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.handle.w  { top: calc(50% - 4.5px); left: -5px; cursor: ew-resize; }
+
+/* Floating Aero Glass Toolbar */
+/* 1. Horizontal Glass Tools Bar (Bottom of selection) */
+.aero-tools-bar {
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 5px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 10px 25px rgba(0, 70, 160, 0.2), inset 0 1px 1px #fff;
+  z-index: 100;
+  cursor: default;
+  pointer-events: auto !important;
+  width: max-content;
+  height: max-content;
+  box-sizing: border-box;
+  transition: opacity 0.15s ease;
+}
+
+/* 2. Vertical Glass Actions Bar (Always vertical on right side of selection) */
+.aero-actions-bar {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 8px 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 10px 25px rgba(0, 70, 160, 0.2), inset 0 1px 1px #fff;
+  z-index: 100;
+  cursor: default;
+  pointer-events: auto !important;
+  width: max-content;
+  height: max-content;
+  box-sizing: border-box;
+  transition: opacity 0.15s ease;
+}
+
+.aero-actions-bar .tool-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+  border-radius: 7px;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.tool-btn svg {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: all 0.15s ease;
+}
+
+.tool-btn:hover {
+  background: rgba(0, 140, 255, 0.12);
+  color: #0284c7;
+  transform: translateY(-1px);
+}
+
+.tool-btn.active {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%) !important;
+  color: white !important;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+}
+
+.tool-btn.active svg {
+  stroke: white !important;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.12);
+  margin: 0 3px;
+}
+
+.aero-toolbar.vertical .divider {
+  width: 20px;
+  height: 1px;
+  margin: 3px 0;
+}
+
+/* Line Width / Size Selector */
+.size-picker-trigger {
+  width: 30px;
+  height: 30px;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 7px;
+  transition: all 0.15s ease;
+}
+
+.size-picker-trigger:hover {
+  background: rgba(0, 140, 255, 0.12);
+}
+
+.size-preview-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1e293b;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: transform 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+.size-picker-trigger:hover .size-preview-dot {
+  transform: scale(1.2);
+}
+
+.size-popup {
+  position: absolute;
+  top: -46px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  padding: 5px 8px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  z-index: 200;
+}
+
+.aero-toolbar.vertical .size-popup {
+  top: 50%;
+  left: auto;
+  right: 42px;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
+
+.aero-toolbar.vertical.pos-left .size-popup {
+  left: 42px;
+  right: auto;
+}
+
+.size-popup.hidden {
+  display: none;
+}
+
+.size-option {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.size-option:hover {
+  background: rgba(0, 140, 255, 0.15);
+}
+
+.size-option.active {
+  background: rgba(2, 132, 199, 0.2);
+  box-shadow: 0 0 0 1.5px #0284c7;
+}
+
+.size-indicator {
+  border-radius: 50%;
+  background: #1e293b;
+  display: block;
+}
+
+/* Color Picker Trigger */
+.color-picker-trigger {
+  width: 30px;
+  height: 30px;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  transition: transform 0.15s ease;
+}
+
+.color-dot:hover {
+  transform: scale(1.15);
+}
+
+.palette-popup {
+  position: absolute;
+  top: -46px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  padding: 6px 8px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  z-index: 200;
+}
+
+.aero-toolbar.vertical .palette-popup {
+  top: 50%;
+  left: auto;
+  right: 42px;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
+
+.aero-toolbar.vertical.pos-left .palette-popup {
+  left: 42px;
+  right: auto;
+}
+
+.palette-popup.hidden {
+  display: none;
+}
+
+.color-option {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.color-option:hover {
+  transform: scale(1.25);
+}
+
+/* Action Buttons */
+.btn-action-copy {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  color: white !important;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+}
+
+.btn-action-copy svg {
+  stroke: white;
+}
+
+.btn-action-copy:hover {
+  background: linear-gradient(180deg, #7dd3fc 0%, #0369a1 100%);
+}
+
+.btn-action-save {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  color: white !important;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+.btn-action-save svg {
+  stroke: white;
+}
+
+.btn-action-video {
+  background: linear-gradient(180deg, #fb7185 0%, #e11d48 100%);
+  color: white !important;
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.3);
+}
+
+.btn-action-video svg {
+  stroke: white;
+  fill: white;
+}
+
+.btn-action-video:hover {
+  background: linear-gradient(180deg, #fda4af 0%, #be123c 100%);
+}
+
+.btn-action-gif {
+  background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%);
+  color: white !important;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(147, 51, 234, 0.3);
+}
+
+.btn-action-gif:hover {
+  background: linear-gradient(180deg, #d8b4fe 0%, #7e22ce 100%);
+}
+
+.btn-action-close:hover {
+  color: #ef4444 !important;
+  background: #fee2e2 !important;
+}
+
+/* Floating Recording Toolbar */
+.recording-bar {
+  position: absolute;
+  top: -46px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(16px);
+  padding: 6px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 110;
+}
+
+.recording-bar.hidden {
+  display: none;
+}
+
+.rec-pulsing-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.5px;
+}
+
+.rec-pulsing-circle {
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.9); opacity: 0.6; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  100% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 10px 3px rgba(239, 68, 68, 0.8); }
+}
+
+.rec-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rec-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.btn-rec-stop {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  border-color: #ef4444;
+}
+
+.btn-rec-stop:hover {
+  background: linear-gradient(180deg, #f87171 0%, #b91c1c 100%);
+}
+
+/* Post-Video Review Action Bar */
+.video-review-bar {
+  position: absolute;
+  top: -46px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  padding: 5px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 24px rgba(0, 80, 160, 0.22);
+  z-index: 120;
+}
+
+.video-review-bar.hidden {
+  display: none;
+}
+
+.video-status-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.video-quality-tag {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quality-check {
+  color: #10b981;
+  font-weight: 900;
+}
+
+.btn-split-group {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.btn-split-group .split-btn-main {
+  width: auto !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.35) !important;
+  padding: 5px 11px !important;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 5px;
+  border-top: none;
+  border-bottom: none;
+  border-left: none;
+  outline: none;
+}
+
+.btn-split-group .split-btn-sub {
+  width: auto !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  padding: 5px 9px !important;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: none;
+  outline: none;
+}
+
+.btn-split-group .split-btn-sub:hover {
+  filter: brightness(1.12);
+}
+
+/* Inline Canvas Text Editor */
+.canvas-inline-editor {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1.5px dashed rgba(0, 140, 255, 0.8);
+  border-radius: 4px;
+  padding: 3px 6px;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-width: 60px;
+  min-height: 24px;
+  line-height: 1.25;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  z-index: 150;
+  cursor: text;
+}
+
+/* Moving Mode Cursor */
+body.mode-moving {
+  cursor: grab !important;
+}
+
+body.mode-moving * {
+  cursor: grab !important;
+}
+
+body.mode-moving:active {
+  cursor: grabbing !important;
+}
+
+.overlay-notice {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 1000;
+  max-width: min(620px, calc(100vw - 32px));
+  padding: 11px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  color: #f4fbff;
+  background: rgba(8, 28, 45, 0.94);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(12px);
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 18px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.overlay-notice.error {
+  border-color: rgba(255, 117, 132, 0.7);
+  background: rgba(87, 20, 32, 0.95);
+}
+
+.overlay-notice.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

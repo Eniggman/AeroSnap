@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AeroSnap 2.0 Overlay</title>
+  <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+  <!-- Fullscreen Base Canvas (shows captured screen) -->
+  <canvas id="base-canvas"></canvas>
+
+  <!-- Drawing / Annotations Overlay Canvas -->
+  <canvas id="draw-canvas"></canvas>
+
+  <!-- Selection Box & Frame -->
+  <div id="selection-box" class="selection-box hidden">
+    <div class="dimension-badge" id="dim-badge">0 × 0 px</div>
+    
+    <!-- 8 Resize handles -->
+    <div class="handle nw" data-handle="nw"></div>
+    <div class="handle n" data-handle="n"></div>
+    <div class="handle ne" data-handle="ne"></div>
+    <div class="handle e" data-handle="e"></div>
+    <div class="handle se" data-handle="se"></div>
+    <div class="handle s" data-handle="s"></div>
+    <div class="handle sw" data-handle="sw"></div>
+    <div class="handle w" data-handle="w"></div>
+
+    <!-- 1. Horizontal Bottom Glass Tools Bar -->
+    <div id="aero-tools-bar" class="aero-tools-bar">
+      <div class="tool-btn active" data-tool="pen" title="Карандаш (Рисование)">
+        <svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
+      </div>
+      <div class="tool-btn" data-tool="arrow" title="Стрелка">
+        <svg viewBox="0 0 24 24"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
+      </div>
+      <div class="tool-btn" data-tool="counter" title="Нумерация шагов (1, 2, 3...)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="12" font-weight="bold" fill="currentColor">1</text></svg>
+      </div>
+      <div class="tool-btn" data-tool="blur-brush" title="Рисуемое размытие — проведите рукой по области">
+        <svg viewBox="0 0 24 24"><path d="M8.5 11V5.5a1.5 1.5 0 0 1 3 0V10M11.5 9V4.5a1.5 1.5 0 0 1 3 0V10M14.5 9V6a1.5 1.5 0 0 1 3 0v6M8.5 9.5a1.5 1.5 0 0 0-3 0v4.2c0 4.1 2.6 6.3 6.4 6.3h1.6c3.9 0 6.5-2.5 6.5-6.5V10a1.5 1.5 0 0 0-3 0v2"/><path d="M3 5h3M2 8h2"/></svg>
+      </div>
+      <div class="tool-btn" data-tool="blur-rect" title="Размытие прямоугольной области">
+        <svg viewBox="0 0 24 24"><path d="M7 5.5c2.3-2.7 5.9-2 7.1.6 3.2-.6 5.1 2.2 4.1 4.8 2.2 1.5 1.5 5.2-1.2 5.8-.6 2.7-4.4 3.4-6.1 1.2-2.8 1.4-5.6-.6-5.3-3.2-2.4-1.7-1.3-5.2 1.1-5.7-.7-1.1-.5-2.5.3-3.5Z"/></svg>
+      </div>
+      <div class="tool-btn" data-tool="rect" title="Прямоугольник">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      </div>
+      <div class="tool-btn" data-tool="text" title="Текст">
+        <svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Undo, Redo & Clear All -->
+      <div class="tool-btn" id="btn-undo" title="Отменить назад (Ctrl+Z)">
+        <svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+      </div>
+      <div class="tool-btn" id="btn-redo" title="Повторить вперед">
+        <svg viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
+      </div>
+      <div class="tool-btn" id="btn-clear-all" title="Очистить все рисунки">
+        <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Line Width / Size Selector -->
+      <div class="size-picker-trigger" id="size-trigger" title="Толщина линии и стрелок">
+        <div class="size-preview-dot" id="size-preview-dot"></div>
+      </div>
+
+      <!-- Size Popup -->
+      <div id="size-popup" class="size-popup hidden">
+        <div class="size-option" data-size="2" title="Тонкая (2px)"><span class="size-indicator" style="width: 4px; height: 4px;"></span></div>
+        <div class="size-option active" data-size="4" title="Средняя (4px)"><span class="size-indicator" style="width: 8px; height: 8px;"></span></div>
+        <div class="size-option" data-size="7" title="Толстая (7px)"><span class="size-indicator" style="width: 12px; height: 12px;"></span></div>
+        <div class="size-option" data-size="12" title="Жирная (12px)"><span class="size-indicator" style="width: 16px; height: 16px;"></span></div>
+      </div>
+
+      <!-- Color Picker Trigger -->
+      <div class="color-picker-trigger" id="color-trigger" title="Выбрать цвет">
+        <div class="color-dot" id="current-color-dot" style="background: #ef4444;"></div>
+      </div>
+
+      <!-- Color Palette Popup -->
+      <div id="palette-popup" class="palette-popup hidden">
+        <div class="color-option" style="background: #ef4444;" data-color="#ef4444" title="Красный"></div>
+        <div class="color-option" style="background: #0284c7;" data-color="#0284c7" title="Синий"></div>
+        <div class="color-option" style="background: #10b981;" data-color="#10b981" title="Зеленый"></div>
+        <div class="color-option" style="background: #f59e0b;" data-color="#f59e0b" title="Желтый"></div>
+        <div class="color-option" style="background: #8b5cf6;" data-color="#8b5cf6" title="Фиолетовый"></div>
+        <div class="color-option" style="background: #ffffff; border: 1px solid #ccc;" data-color="#ffffff" title="Белый"></div>
+        <div class="color-option" style="background: #0f172a;" data-color="#0f172a" title="Тёмный"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Close Button (In Horizontal Tools Bar) -->
+      <div class="tool-btn btn-action-close" id="btn-close" title="Закрыть (Esc)">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+    </div>
+
+    <!-- 2. Vertical Glass Actions Bar (Right side: Save -> GIF -> Video -> Copy) -->
+    <div id="aero-actions-bar" class="aero-actions-bar">
+      <!-- 1. Save (Сохранить) -->
+      <div class="tool-btn btn-action-save" id="btn-save" title="Сохранить скриншот в файл (Ctrl+S)">
+        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      </div>
+
+      <!-- 2. GIF Animation Button -->
+      <div class="tool-btn btn-action-gif" id="btn-record-gif" title="Запись анимации GIF">
+        <span>GIF</span>
+      </div>
+
+      <!-- 3. Video (MP4) Button -->
+      <div class="tool-btn btn-action-video" id="btn-record-video" title="Запись видео MP4">
+        <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      </div>
+
+      <!-- 4. Copy (Скопировать — в самом низу) -->
+      <div class="tool-btn btn-action-copy" id="btn-copy" title="Скопировать скриншот в буфер (Ctrl+C)">
+        <svg viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+      </div>
+    </div>
+
+    <!-- Floating Recording Toolbar (When recording is active) -->
+    <div id="recording-bar" class="recording-bar hidden">
+      <div class="rec-pulsing-badge">
+        <span class="rec-pulsing-circle" id="rec-dot"></span>
+        <span id="rec-mode-badge" style="font-size: 11px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.2);">MP4</span>
+        <span id="rec-timer">00:00</span>
+      </div>
+      <button class="rec-btn" id="btn-rec-pause" title="Пауза / Продолжить (Shift+ScrollLock)">⏸ Пауза</button>
+      <button class="rec-btn btn-rec-stop" id="btn-rec-stop" title="Сохранить запись (ScrollLock)">⏹ Сохранить</button>
+      <button class="rec-btn btn-rec-cancel" id="btn-rec-cancel" title="Отменить без сохранения">✕</button>
+    </div>
+
+    <!-- Post-Video Action Bar (After recording is stopped) -->
+    <div id="video-review-bar" class="video-review-bar hidden">
+      <div class="video-status-badge">
+        <span>🎬 Готово</span>
+      </div>
+      <div class="video-quality-tag" id="video-quality-tag" title="Качество видео: 1080p">
+        <span class="quality-check">✓</span> 1080p
+      </div>
+      <div class="divider"></div>
+
+      <!-- Split Button: Copy (MP4 / GIF) -->
+      <div class="btn-split-group">
+        <button class="tool-btn btn-action-copy split-btn-main" id="btn-video-copy-mp4" title="Скопировать видео MP4 в буфер обмена">
+          <svg viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          <span>MP4</span>
+        </button>
+        <button class="tool-btn btn-action-copy split-btn-sub" id="btn-video-copy-gif" title="Скопировать как GIF в буфер обмена">
+          <span>GIF</span>
+        </button>
+      </div>
+
+      <!-- Split Button: Save (MP4 / GIF) -->
+      <div class="btn-split-group">
+        <button class="tool-btn btn-action-save split-btn-main" id="btn-video-save-mp4" title="Сохранить как видеофайл MP4">
+          <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>MP4</span>
+        </button>
+        <button class="tool-btn btn-action-save split-btn-sub" id="btn-video-save-gif" title="Сохранить как анимацию GIF">
+          <span>GIF</span>
+        </button>
+      </div>
+
+      <div class="tool-btn btn-action-close" id="btn-video-discard" title="Закрыть (Esc)">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <script src="tauri-bridge.js"></script>
+  <script src="sound.js"></script>
+  <script src="overlay.js"></script>
+</body>
+</html>
