@@ -1,6 +1,6 @@
 # AeroSnap — скриншотер фото и видео
 
-AeroSnap — лёгкое приложение для создания скриншотов и записи экрана на Windows, вдохновлённое skrinshoter.ru.
+AeroSnap — лёгкое приложение для создания скриншотов и записи экрана на Windows
 
 [![Скачать AeroSnap 2.2](https://img.shields.io/badge/Скачать_AeroSnap_2.2-Windows_x64-0284c7?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.2.0)
 [![Версия 2.2.0](https://img.shields.io/badge/Версия-v2.2.0-10b981?style=for-the-badge)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.2.0)
