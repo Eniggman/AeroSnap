@@ -7,7 +7,7 @@ if (!fs.existsSync(assetsDir)) {
   fs.mkdirSync(assetsDir, { recursive: true });
 }
 
-// Generate Frutiger Aero Camera SVG Icon
+// Generate Aero Camera SVG Icon
 const svg = `
 <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
   <defs>

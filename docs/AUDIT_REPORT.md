@@ -74,7 +74,7 @@
 `
                       ┌────────────────────────────────────────┐
                       │          UI / RENDERER LAYER           │
-                      │  (Vanilla JS, HTML5, Frutiger Aero CSS) │
+                      │   (Vanilla JS, HTML5, Aero Glass CSS)  │
                       │  overlay.js, settings.js, sound.js     │
                       └───────────────────┬────────────────────┘
                                           │
