@@ -40,12 +40,12 @@ type RecorderControl = CaptureControl<Recorder, RecorderError>;
 struct RecorderFlags {
     rect: PixelRect,
     fps: u32,
-    mp4_path: PathBuf,
-    gif_path: PathBuf,
+    mp4_path: Option<PathBuf>,
+    gif_path: Option<PathBuf>,
     paused: Arc<AtomicBool>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct PixelRect {
     x: u32,
     y: u32,
@@ -58,6 +58,8 @@ struct Recorder {
     gif: Option<GifEncoder<BufWriter<File>>>,
     rect: PixelRect,
     paused: Arc<AtomicBool>,
+    pause_started_at: Option<i64>,
+    total_paused_duration: i64,
     gif_size: (u32, u32),
     video_interval: Duration,
     gif_interval: Duration,
@@ -82,26 +84,37 @@ impl GraphicsCaptureApiHandler for Recorder {
 
     fn new(ctx: Context<Self::Flags>) -> Result<Self, Self::Error> {
         let flags = ctx.flags;
-        let video = VideoSettingsBuilder::new(flags.rect.width, flags.rect.height)
-            .sub_type(VideoSettingsSubType::H264)
-            .frame_rate(flags.fps)
-            .bitrate(10_000_000);
-        let encoder = VideoEncoder::new(
-            video,
-            AudioSettingsBuilder::default().disabled(true),
-            ContainerSettingsBuilder::default(),
-            &flags.mp4_path,
-        )?;
+        let encoder = if let Some(mp4_path) = &flags.mp4_path {
+            let video = VideoSettingsBuilder::new(flags.rect.width, flags.rect.height)
+                .sub_type(VideoSettingsSubType::H264)
+                .frame_rate(flags.fps)
+                .bitrate(10_000_000);
+            Some(VideoEncoder::new(
+                video,
+                AudioSettingsBuilder::default().disabled(true),
+                ContainerSettingsBuilder::default(),
+                mp4_path,
+            )?)
+        } else {
+            None
+        };
 
-        let gif_file = BufWriter::new(File::create(&flags.gif_path)?);
-        let mut gif = GifEncoder::new(gif_file);
-        gif.set_repeat(Repeat::Infinite)?;
+        let gif = if let Some(gif_path) = &flags.gif_path {
+            let gif_file = BufWriter::new(File::create(gif_path)?);
+            let mut gif = GifEncoder::new(gif_file);
+            gif.set_repeat(Repeat::Infinite)?;
+            Some(gif)
+        } else {
+            None
+        };
 
         Ok(Self {
-            encoder: Some(encoder),
-            gif: Some(gif),
+            encoder,
+            gif,
             rect: flags.rect,
             paused: flags.paused,
+            pause_started_at: None,
+            total_paused_duration: 0,
             gif_size: fit_within(flags.rect.width, flags.rect.height, 1280),
             video_interval: Duration::from_millis(1000 / flags.fps as u64),
             gif_interval: Duration::from_millis(1000 / 12),
@@ -116,22 +129,34 @@ impl GraphicsCaptureApiHandler for Recorder {
         frame: &mut Frame,
         _capture_control: InternalCaptureControl,
     ) -> Result<(), Self::Error> {
+        let timestamp = frame.timestamp()?.Duration;
+
         if self.paused.load(Ordering::Relaxed) {
+            if self.pause_started_at.is_none() {
+                self.pause_started_at = Some(timestamp);
+            }
             return Ok(());
         }
 
+        if let Some(pause_start) = self.pause_started_at.take() {
+            if timestamp > pause_start {
+                self.total_paused_duration += timestamp - pause_start;
+            }
+        }
+
         let now = Instant::now();
-        let video_due = self
-            .last_video_frame
-            .is_none_or(|last| now.duration_since(last) >= self.video_interval);
-        let gif_due = self
-            .last_gif_frame
-            .is_none_or(|last| now.duration_since(last) >= self.gif_interval);
+        let video_due = self.encoder.is_some()
+            && self
+                .last_video_frame
+                .is_none_or(|last| now.duration_since(last) >= self.video_interval);
+        let gif_due = self.gif.is_some()
+            && self
+                .last_gif_frame
+                .is_none_or(|last| now.duration_since(last) >= self.gif_interval);
         if !video_due && !gif_due {
             return Ok(());
         }
 
-        let timestamp = frame.timestamp()?.Duration;
         let crop = frame.buffer_crop(
             self.rect.x,
             self.rect.y,
@@ -167,8 +192,9 @@ impl GraphicsCaptureApiHandler for Recorder {
         if video_due {
             let mut bottom_up = pixels.to_vec();
             flip_rows(&mut bottom_up, self.rect.width, self.rect.height);
+            let adjusted_timestamp = timestamp.saturating_sub(self.total_paused_duration);
             if let Some(encoder) = self.encoder.as_mut() {
-                encoder.send_frame_buffer(&bottom_up, timestamp)?;
+                encoder.send_frame_buffer(&bottom_up, adjusted_timestamp)?;
             }
             self.last_video_frame = Some(now);
         }
@@ -183,62 +209,117 @@ impl GraphicsCaptureApiHandler for Recorder {
 struct ActiveRecording {
     control: RecorderControl,
     paused: Arc<AtomicBool>,
-    mp4_path: PathBuf,
-    gif_path: PathBuf,
+    mp4_path: Option<PathBuf>,
+    gif_path: Option<PathBuf>,
 }
 
 struct CompletedRecording {
-    mp4_path: PathBuf,
-    gif_path: PathBuf,
+    mp4_path: Option<PathBuf>,
+    gif_path: Option<PathBuf>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum LifecycleState {
+    Idle,
+    Starting,
+    Active,
+}
+
 pub struct RecordingState {
+    state: Mutex<LifecycleState>,
     active: Mutex<Option<ActiveRecording>>,
     completed: Mutex<Option<CompletedRecording>>,
 }
 
-impl RecordingState {
-    pub fn start(&self, rect: CaptureRect, fps: u32, scale_factor: f64) -> Result<(), String> {
-        if self.active.lock().is_some() {
-            return Err("A recording is already active".into());
+impl Default for RecordingState {
+    fn default() -> Self {
+        Self {
+            state: Mutex::new(LifecycleState::Idle),
+            active: Mutex::new(None),
+            completed: Mutex::new(None),
         }
-        self.discard_completed();
+    }
+}
 
-        let monitor = Monitor::primary().map_err(|error| error.to_string())?;
-        let width = monitor.width().map_err(|error| error.to_string())?;
-        let height = monitor.height().map_err(|error| error.to_string())?;
-        let rect = clamp_rect(rect, width, height, scale_factor);
-        let temp = std::env::temp_dir().join("AeroSnap");
-        fs::create_dir_all(&temp).map_err(|error| error.to_string())?;
-        let id = Uuid::new_v4();
-        let mp4_path = temp.join(format!("{id}.mp4"));
-        let gif_path = temp.join(format!("{id}.gif"));
-        let paused = Arc::new(AtomicBool::new(false));
-        let flags = RecorderFlags {
-            rect,
-            fps: fps.clamp(10, 60),
-            mp4_path: mp4_path.clone(),
-            gif_path: gif_path.clone(),
-            paused: paused.clone(),
-        };
-        let settings = Settings::new(
-            monitor,
-            CursorCaptureSettings::WithCursor,
-            DrawBorderSettings::Default,
-            SecondaryWindowSettings::Default,
-            MinimumUpdateIntervalSettings::Default,
-            DirtyRegionSettings::Default,
-            ColorFormat::Bgra8,
-            flags,
-        );
-        let control = Recorder::start_free_threaded(settings).map_err(|error| error.to_string())?;
-        *self.active.lock() = Some(ActiveRecording {
-            control,
-            paused,
-            mp4_path,
-            gif_path,
-        });
+impl RecordingState {
+    pub fn is_active(&self) -> bool {
+        *self.state.lock() != LifecycleState::Idle
+    }
+
+    pub fn start(
+        &self,
+        rect: CaptureRect,
+        fps: u32,
+        scale_factor: f64,
+        format: Option<&str>,
+    ) -> Result<(), String> {
+        {
+            let mut state = self.state.lock();
+            if *state != LifecycleState::Idle {
+                return Err("A recording is already starting or active".into());
+            }
+            *state = LifecycleState::Starting;
+        }
+
+        let result = (|| -> Result<(), String> {
+            self.discard_completed();
+
+            let monitor = Monitor::primary().map_err(|error| error.to_string())?;
+            let width = monitor.width().map_err(|error| error.to_string())?;
+            let height = monitor.height().map_err(|error| error.to_string())?;
+            let rect = clamp_rect(rect, width, height, scale_factor);
+            let temp = std::env::temp_dir().join("AeroSnap");
+            fs::create_dir_all(&temp).map_err(|error| error.to_string())?;
+            let id = Uuid::new_v4();
+
+            let wants_mp4 = format.map_or(true, |f| f == "mp4" || f == "both" || f.is_empty());
+            let wants_gif = format.map_or(true, |f| f == "gif" || f == "both");
+
+            let mp4_path = if wants_mp4 {
+                Some(temp.join(format!("{id}.mp4")))
+            } else {
+                None
+            };
+            let gif_path = if wants_gif {
+                Some(temp.join(format!("{id}.gif")))
+            } else {
+                None
+            };
+
+            let paused = Arc::new(AtomicBool::new(false));
+            let flags = RecorderFlags {
+                rect,
+                fps: fps.clamp(10, 60),
+                mp4_path: mp4_path.clone(),
+                gif_path: gif_path.clone(),
+                paused: paused.clone(),
+            };
+            let settings = Settings::new(
+                monitor,
+                CursorCaptureSettings::WithCursor,
+                DrawBorderSettings::Default,
+                SecondaryWindowSettings::Default,
+                MinimumUpdateIntervalSettings::Default,
+                DirtyRegionSettings::Default,
+                ColorFormat::Bgra8,
+                flags,
+            );
+            let control = Recorder::start_free_threaded(settings).map_err(|error| error.to_string())?;
+            *self.active.lock() = Some(ActiveRecording {
+                control,
+                paused,
+                mp4_path,
+                gif_path,
+            });
+            Ok(())
+        })();
+
+        if let Err(e) = result {
+            *self.state.lock() = LifecycleState::Idle;
+            return Err(e);
+        }
+
+        *self.state.lock() = LifecycleState::Active;
         Ok(())
     }
 
@@ -253,18 +334,37 @@ impl RecordingState {
     }
 
     pub fn stop(&self) -> Result<(), String> {
-        let active = self
-            .active
-            .lock()
-            .take()
-            .ok_or_else(|| "No active recording".to_string())?;
+        let active = self.active.lock().take();
+        *self.state.lock() = LifecycleState::Idle;
+
+        let Some(active) = active else {
+            return Err("No active recording".to_string());
+        };
+
         active.paused.store(false, Ordering::Relaxed);
         let callback = active.control.callback();
-        callback
-            .lock()
-            .finish()
-            .map_err(|error| error.to_string())?;
-        active.control.stop().map_err(|error| error.to_string())?;
+        let finish_res = callback.lock().finish();
+        let stop_res = active.control.stop();
+
+        if let Err(e) = finish_res {
+            if let Some(p) = &active.mp4_path {
+                remove_if_exists(p);
+            }
+            if let Some(p) = &active.gif_path {
+                remove_if_exists(p);
+            }
+            return Err(e.to_string());
+        }
+        if let Err(e) = stop_res {
+            if let Some(p) = &active.mp4_path {
+                remove_if_exists(p);
+            }
+            if let Some(p) = &active.gif_path {
+                remove_if_exists(p);
+            }
+            return Err(e.to_string());
+        }
+
         *self.completed.lock() = Some(CompletedRecording {
             mp4_path: active.mp4_path,
             gif_path: active.gif_path,
@@ -273,12 +373,17 @@ impl RecordingState {
     }
 
     pub fn cancel(&self) {
+        *self.state.lock() = LifecycleState::Idle;
         if let Some(active) = self.active.lock().take() {
             let callback = active.control.callback();
             let _ = callback.lock().finish();
             let _ = active.control.stop();
-            remove_if_exists(&active.mp4_path);
-            remove_if_exists(&active.gif_path);
+            if let Some(p) = &active.mp4_path {
+                remove_if_exists(p);
+            }
+            if let Some(p) = &active.gif_path {
+                remove_if_exists(p);
+            }
         }
         self.discard_completed();
     }
@@ -293,11 +398,18 @@ impl RecordingState {
         let completed = completed
             .as_ref()
             .ok_or_else(|| "No completed recording".to_string())?;
-        let (source, extension) = if format.eq_ignore_ascii_case("gif") {
+        let (source_opt, extension) = if format.eq_ignore_ascii_case("gif") {
             (&completed.gif_path, "gif")
         } else {
             (&completed.mp4_path, "mp4")
         };
+        let source = source_opt
+            .as_ref()
+            .ok_or_else(|| format!("{format} recording was not captured for this session"))?;
+        if !source.exists() {
+            return Err("Recording temp file not found".into());
+        }
+
         let directory = PathBuf::from(store.get().video.save_path);
         fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
         let (file_name, target) = next_recording_path(&directory, extension)?;
@@ -316,8 +428,12 @@ impl RecordingState {
 
     fn discard_completed(&self) {
         if let Some(completed) = self.completed.lock().take() {
-            remove_if_exists(&completed.mp4_path);
-            remove_if_exists(&completed.gif_path);
+            if let Some(p) = &completed.mp4_path {
+                remove_if_exists(p);
+            }
+            if let Some(p) = &completed.gif_path {
+                remove_if_exists(p);
+            }
         }
     }
 }
@@ -430,6 +546,15 @@ mod tests {
     }
 
     #[test]
+    fn lifecycle_state_prevents_duplicate_starts() {
+        let state = RecordingState::default();
+        assert!(!state.is_active());
+        *state.state.lock() = LifecycleState::Active;
+        assert!(state.is_active());
+        assert!(state.start(CaptureRect { x: 0.0, y: 0.0, w: 100.0, h: 100.0 }, 30, 1.0, None).is_err());
+    }
+
+    #[test]
     #[ignore = "captures the live Windows desktop"]
     fn native_capture_smoke() {
         let state = RecordingState::default();
@@ -443,6 +568,7 @@ mod tests {
                 },
                 30,
                 1.0,
+                Some("both"),
             )
             .unwrap();
         std::thread::sleep(Duration::from_millis(1200));
@@ -450,8 +576,8 @@ mod tests {
 
         let completed = state.completed.lock();
         let recording = completed.as_ref().unwrap();
-        assert!(fs::metadata(&recording.mp4_path).unwrap().len() > 0);
-        assert!(fs::metadata(&recording.gif_path).unwrap().len() > 0);
+        assert!(fs::metadata(recording.mp4_path.as_ref().unwrap()).unwrap().len() > 0);
+        assert!(fs::metadata(recording.gif_path.as_ref().unwrap()).unwrap().len() > 0);
         drop(completed);
         state.discard_completed();
     }

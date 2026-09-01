@@ -30,7 +30,7 @@ AeroSnap — лёгкое приложение для создания скри�
 
 - 💾 **[AeroSnap 2.1 Setup (.exe)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.1.0)**
 - 📝 [Список изменений 2.1 (CHANGES_2.1.md)](release/CHANGES_2.1.md)
-- 🔒 Контрольная сумма SHA-256: `612289D596914D55620E1F016B575F123583AD27A6D3914C6AD7B519F18F126F`
+- 🔒 Контрольная сумма SHA-256: `F94F9B388CB73BAE8BED427BA867709CD71EFC1F9BF64AE77EFCCE74CFD86B76`
 
 ## Сборка из исходников
 
@@ -38,7 +38,7 @@ AeroSnap — лёгкое приложение для создания скри�
 
 ```powershell
 npm install
-npm run tauri:build
+npm run build
 ```
 
 ## Лицензия

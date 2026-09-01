@@ -2,48 +2,21 @@
   "name": "aerosnap",
   "productName": "AeroSnap 2.1",
   "version": "2.1.0",
-  "description": "AeroSnap — Скриншоты и запись видео с экрана",
-  "main": "src/main/index.js",
+  "description": "AeroSnap — лёгкое приложение для создания скриншотов и записи экрана на Windows",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron .",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
-    "build:portable": "electron-builder --win portable",
-    "build:dir": "electron-builder --win dir",
-    "build": "electron-builder --win portable"
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri"
   },
   "keywords": [
     "screenshot",
     "screen-recorder",
-    "frutiger-aero",
-    "electron"
+    "tauri",
+    "rust"
   ],
   "author": "AeroSnap Team",
   "license": "MIT",
   "devDependencies": {
-    "@tauri-apps/cli": "^2",
-    "electron": "^34.2.0",
-    "electron-builder": "^25.1.8"
-  },
-  "build": {
-    "appId": "com.aerosnap.app",
-    "productName": "AeroSnap 2.1",
-    "win": {
-      "target": ["dir", "portable"],
-      "icon": "assets/icon.png"
-    },
-    "portable": {
-      "artifactName": "AeroSnap-2.1-windows-x64-portable.exe"
-    },
-    "files": [
-      "src/**/*",
-      "assets/**/*",
-      "package.json"
-    ],
-    "directories": {
-      "output": "dist"
-    }
+    "@tauri-apps/cli": "^2"
   }
 }
