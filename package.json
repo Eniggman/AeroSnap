@@ -1,7 +1,7 @@
 {
   "name": "aerosnap",
-  "productName": "AeroSnap 2.1",
-  "version": "2.1.0",
+  "productName": "AeroSnap 2.2",
+  "version": "2.2.0",
   "description": "AeroSnap — лёгкое приложение для создания скриншотов и записи экрана на Windows",
   "scripts": {
     "dev": "tauri dev",
