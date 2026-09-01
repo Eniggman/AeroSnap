@@ -29,7 +29,6 @@ AeroSnap — лёгкое приложение для создания скри�
 Готовая версия 2.0 для Windows доступна во вкладке релизов:
 
 - 💾 **[AeroSnap 2.0 Setup (.exe)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.0.0)**
-- 📝 [Список изменений 2.0 (CHANGES_2.0.md)](release/CHANGES_2.0.md)
 - 🔒 Контрольная сумма SHA-256: `C8A604B888690CF8A303A599360672D78A53511633BC5426F5A72CE15048CC79`
 
 ## Сборка из исходников
