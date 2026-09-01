@@ -4,6 +4,7 @@ src-tauri/target/
 *.exe
 release/*.exe
 гитхаб/
+preview.html
 .DS_Store
 Thumbs.db
 *.log
