@@ -199,7 +199,7 @@ pub struct RecordingState {
 }
 
 impl RecordingState {
-    pub fn start(&self, rect: CaptureRect, fps: u32) -> Result<(), String> {
+    pub fn start(&self, rect: CaptureRect, fps: u32, scale_factor: f64) -> Result<(), String> {
         if self.active.lock().is_some() {
             return Err("A recording is already active".into());
         }
@@ -208,7 +208,7 @@ impl RecordingState {
         let monitor = Monitor::primary().map_err(|error| error.to_string())?;
         let width = monitor.width().map_err(|error| error.to_string())?;
         let height = monitor.height().map_err(|error| error.to_string())?;
-        let rect = clamp_rect(rect, width, height);
+        let rect = clamp_rect(rect, width, height, scale_factor);
         let temp = std::env::temp_dir().join("AeroSnap");
         fs::create_dir_all(&temp).map_err(|error| error.to_string())?;
         let id = Uuid::new_v4();
@@ -322,13 +322,19 @@ impl RecordingState {
     }
 }
 
-fn clamp_rect(rect: CaptureRect, monitor_width: u32, monitor_height: u32) -> PixelRect {
-    let x = rect.x.max(0.0).round() as u32;
-    let y = rect.y.max(0.0).round() as u32;
+fn clamp_rect(
+    rect: CaptureRect,
+    monitor_width: u32,
+    monitor_height: u32,
+    scale_factor: f64,
+) -> PixelRect {
+    let scale = if scale_factor > 0.0 { scale_factor } else { 1.0 };
+    let x = (rect.x * scale).max(0.0).round() as u32;
+    let y = (rect.y * scale).max(0.0).round() as u32;
     let x = x.min(monitor_width.saturating_sub(2));
     let y = y.min(monitor_height.saturating_sub(2));
-    let mut width = (rect.w.max(2.0).round() as u32).min(monitor_width - x);
-    let mut height = (rect.h.max(2.0).round() as u32).min(monitor_height - y);
+    let mut width = ((rect.w * scale).max(2.0).round() as u32).min(monitor_width - x);
+    let mut height = ((rect.h * scale).max(2.0).round() as u32).min(monitor_height - y);
     width -= width % 2;
     height -= height % 2;
     PixelRect {
@@ -399,8 +405,28 @@ mod tests {
             },
             1920,
             1080,
+            1.0,
         );
         assert_eq!((rect.width, rect.height), (100, 98));
+    }
+
+    #[test]
+    fn clamp_rect_scales_with_dpi() {
+        let rect = clamp_rect(
+            CaptureRect {
+                x: 10.0,
+                y: 20.0,
+                w: 100.0,
+                h: 50.0,
+            },
+            1920,
+            1080,
+            1.5,
+        );
+        assert_eq!(rect.x, 15);
+        assert_eq!(rect.y, 30);
+        assert_eq!(rect.width, 150);
+        assert_eq!(rect.height, 74); // 75 - 75%2 = 74 (even)
     }
 
     #[test]
@@ -416,6 +442,7 @@ mod tests {
                     h: 240.0,
                 },
                 30,
+                1.0,
             )
             .unwrap();
         std::thread::sleep(Duration::from_millis(1200));

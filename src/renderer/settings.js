@@ -110,7 +110,8 @@ async function persistSettings() {
 
   if (window.aeroAPI) {
     try {
-      currentSettings = await window.aeroAPI.saveSettings(currentSettings);
+      const saved = await window.aeroAPI.saveSettings(currentSettings);
+      currentSettings = (saved && saved.settings) ? saved.settings : (saved || currentSettings);
       renderSettings();
       showToast('Настройки сохранены');
     } catch (error) {

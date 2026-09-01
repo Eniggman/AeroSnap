@@ -77,22 +77,13 @@ class ShortcutManager {
     try {
       globalShortcut.unregisterAll();
     } catch (e) {}
-  }
-
   registerOverlayEscape() {
-    try {
-      this.safeRegister('Escape', () => {
-        if (this.appManager.overlayWindow) {
-          this.appManager.closeOverlay();
-        }
-      });
-    } catch (e) {}
+    // Escape is handled locally inside the overlay window DOM keydown listener
+    // to avoid intercepting Escape in other OS applications globally.
   }
 
   unregisterOverlayEscape() {
-    try {
-      globalShortcut.unregister('Escape');
-    } catch (e) {}
+    // No-op
   }
 }
 
