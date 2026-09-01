@@ -1,6 +1,13 @@
 # AeroSnap — скриншотер фото и видео
 
-AeroSnap — лёгкое приложение для создания скриншотов и записи экрана на Windows в стиле Frutiger Aero, вдохновлённое skrinshoter.ru.
+AeroSnap — лёгкое приложение для создания скриншотов и записи экрана на Windows, вдохновлённое skrinshoter.ru.
+
+[![Скачать AeroSnap 2.0](https://img.shields.io/badge/Скачать_AeroSnap_2.0-Windows_x64-0284c7?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.0.0)
+[![Версия 2.0.0](https://img.shields.io/badge/Версия-v2.0.0-10b981?style=for-the-badge)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.0.0)
+
+> 🚀 **[Скачать AeroSnap 2.0 (Windows Setup)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.0.0)** — готовый установщик программы доступен на вкладке [Releases](https://github.com/Eniggman/AeroSnap/releases).
+
+---
 
 ![Оверлей захвата и инструменты AeroSnap](assets/screenshots/overlay.png)
 
@@ -17,7 +24,15 @@ AeroSnap — лёгкое приложение для создания скри�
 
 ![Настройки AeroSnap](assets/screenshots/settings.png)
 
-## Сборка
+## 📥 Скачать
+
+Готовая версия 2.0 для Windows доступна во вкладке релизов:
+
+- 💾 **[AeroSnap 2.0 Setup (.exe)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.0.0)**
+- 📝 [Список изменений 2.0 (CHANGES_2.0.md)](release/CHANGES_2.0.md)
+- 🔒 Контрольная сумма SHA-256: `C8A604B888690CF8A303A599360672D78A53511633BC5426F5A72CE15048CC79`
+
+## Сборка из исходников
 
 Требуются Rust, Windows WebView2 и Node.js с установленным Tauri CLI.
 
@@ -26,14 +41,8 @@ npm install
 npm run tauri:build
 ```
 
-## Публикация и релизы
-
-Готовый установщик доступен в разделе [Releases](https://github.com/Eniggman/AeroSnap/releases).  
-Контрольная сумма установщика — в `release/SHA256SUMS.txt`, изменения — в `release/CHANGES_2.0.md`.
-
-Проект не содержит пользовательских скриншотов, профилей, секретов или абсолютных путей разработки.
-
 ## Лицензия
 
-MIT.
+[MIT](LICENSE)
+
 
