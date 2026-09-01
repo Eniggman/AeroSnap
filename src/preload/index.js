@@ -15,9 +15,11 @@ contextBridge.exposeInMainWorld('aeroAPI', {
     ipcRenderer.on('init-overlay', (_, data) => callback(data));
   },
   closeOverlay: () => ipcRenderer.send('overlay:close'),
+  overlayReady: () => ipcRenderer.send('overlay:ready'),
   grabScreenRect: (rect) => ipcRenderer.invoke('capture:grab-screen-rect', rect),
   copyScreenshot: (dataUrl) => ipcRenderer.invoke('capture:copy-screenshot', dataUrl),
   saveScreenshot: (dataUrl) => ipcRenderer.invoke('capture:save-screenshot', dataUrl),
+  saveScreenshotAs: (dataUrl) => ipcRenderer.invoke('capture:save-screenshot-as', dataUrl),
   getDesktopSources: () => ipcRenderer.invoke('capture:get-sources'),
   
   // Video Recording API

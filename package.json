@@ -1,7 +1,7 @@
 {
   "name": "aerosnap",
-  "productName": "AeroSnap 2.0",
-  "version": "2.0.0",
+  "productName": "AeroSnap 2.1",
+  "version": "2.1.0",
   "description": "AeroSnap — Скриншоты и запись видео с экрана",
   "main": "src/main/index.js",
   "scripts": {
@@ -29,13 +29,13 @@
   },
   "build": {
     "appId": "com.aerosnap.app",
-    "productName": "AeroSnap 2.0",
+    "productName": "AeroSnap 2.1",
     "win": {
       "target": ["dir", "portable"],
       "icon": "assets/icon.png"
     },
     "portable": {
-      "artifactName": "AeroSnap-2.0-windows-x64-portable.exe"
+      "artifactName": "AeroSnap-2.1-windows-x64-portable.exe"
     },
     "files": [
       "src/**/*",

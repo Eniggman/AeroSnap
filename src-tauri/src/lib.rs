@@ -82,6 +82,10 @@ fn select_directory(app: AppHandle) -> Option<String> {
 
 #[tauri::command]
 fn open_directory(app: AppHandle, target_path: String) -> Result<(), String> {
+    let path = std::path::Path::new(&target_path);
+    if !path.exists() {
+        let _ = std::fs::create_dir_all(path);
+    }
     app.opener()
         .open_path(target_path, None::<String>)
         .map_err(|error| error.to_string())
@@ -121,12 +125,14 @@ fn recording_start(
     window: tauri::WebviewWindow,
     rect: CaptureRect,
     recording: State<'_, recording::RecordingState>,
+    capture: State<'_, CaptureState>,
     store: State<'_, SettingsStore>,
 ) -> Result<(), String> {
     window
         .set_content_protected(true)
         .map_err(|error| error.to_string())?;
-    if let Err(error) = recording.start(rect, store.get().video.fps) {
+    let scale_factor = capture.current().map(|init| init.scale_factor).unwrap_or(1.0);
+    if let Err(error) = recording.start(rect, store.get().video.fps, scale_factor) {
         let _ = window.set_content_protected(false);
         return Err(error);
     }
@@ -317,6 +323,7 @@ fn disable_window_transitions(_window: &WebviewWindow) {}
 
 fn open_settings(app: &AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("settings") {
+        let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
         return Ok(());

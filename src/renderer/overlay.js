@@ -1292,6 +1292,12 @@ function closeOverlay() {
   if (overlayState.mediaRecorder && overlayState.mediaRecorder.state !== 'inactive') {
     stopVideoRecording();
   }
+  if (overlayState.activeStream) {
+    try {
+      overlayState.activeStream.getTracks().forEach(t => t.stop());
+    } catch (e) {}
+    overlayState.activeStream = null;
+  }
   if (window.aeroAPI) {
     Promise.resolve(window.aeroAPI.closeOverlay()).finally(() => {
       // Keep the preloaded WebView, but release the full-screen pixel buffers.
@@ -1367,6 +1373,8 @@ async function startVideoRecording(format = 'mp4') {
         audio: false
       });
     }
+
+    overlayState.activeStream = stream;
 
     // UI: Hide toolbars immediately
     if (aeroToolsBar) aeroToolsBar.classList.add('hidden');

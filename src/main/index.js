@@ -42,7 +42,9 @@ class AppManager {
         if (BrowserWindow.getAllWindows().length === 0) {
           this.showSettings();
         }
-      });
+    app.on('before-quit', () => {
+      this.isQuitting = true;
+      app.isQuitting = true;
     });
 
     app.on('will-quit', () => {
@@ -381,6 +383,44 @@ class AppManager {
         return { success: true, filePath, fileName };
       } catch (e) {
         console.error('[Capture] Error saving screenshot:', e);
+        return { success: false, error: e.message };
+      }
+    });
+
+    // 5b. Save Screenshot As (Dialog)
+    ipcMain.handle('capture:save-screenshot-as', async (_, dataUrl) => {
+      try {
+        const settings = store.getSettings();
+        const ext = settings.screenshots?.format === 'jpg' ? 'jpg' : 'png';
+        const defaultPath = path.join(
+          settings.screenshots?.savePath || path.join(app.getPath('pictures'), 'AeroSnap', 'Screenshots'),
+          `AeroSnap_${new Date().toISOString().slice(0, 10)}.${ext}`
+        );
+
+        const { canceled, filePath } = await dialog.showSaveDialog({
+          defaultPath,
+          filters: [
+            { name: ext === 'jpg' ? 'JPEG Image' : 'PNG Image', extensions: [ext] }
+          ]
+        });
+
+        if (canceled || !filePath) return null;
+
+        const image = nativeImage.createFromDataURL(dataUrl);
+        const buffer = ext === 'jpg' ? image.toJPEG(95) : image.toPNG();
+        fs.writeFileSync(filePath, buffer);
+
+        if (settings.screenshots?.autoClipboard !== false) {
+          clipboard.writeImage(image);
+        }
+
+        try {
+          shell.showItemInFolder(filePath);
+        } catch (_) {}
+
+        return { success: true, filePath, fileName: path.basename(filePath) };
+      } catch (e) {
+        console.error('[Capture] Error saving screenshot as:', e);
         return { success: false, error: e.message };
       }
     });

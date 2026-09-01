@@ -47,11 +47,12 @@ impl CaptureState {
             .ok_or_else(|| "Primary monitor was not found".to_string())?;
         let image = monitor.capture_image().map_err(|e| e.to_string())?;
         let (width, height) = image.dimensions();
+        let scale_factor = monitor.scale_factor().unwrap_or(1.0) as f64;
         let init = OverlayInit {
             mode: mode.to_string(),
             display_width: width,
             display_height: height,
-            scale_factor: 1.0,
+            scale_factor,
             background_data_url: String::new(),
             settings,
         };
@@ -77,7 +78,7 @@ impl CaptureState {
             .as_ref()
             .ok_or_else(|| "No active capture session".to_string())?;
         let image = match rect {
-            Some(rect) => crop_image(&session.image, rect),
+            Some(rect) => crop_image(&session.image, rect, session.init.scale_factor),
             None => session.image.clone(),
         };
         encode_png_data_url(&image)
@@ -101,13 +102,14 @@ impl CaptureState {
     }
 }
 
-fn crop_image(source: &RgbaImage, rect: CaptureRect) -> RgbaImage {
+fn crop_image(source: &RgbaImage, rect: CaptureRect, scale_factor: f64) -> RgbaImage {
+    let scale = if scale_factor > 0.0 { scale_factor } else { 1.0 };
     let max_w = source.width();
     let max_h = source.height();
-    let x = rect.x.max(0.0).round() as u32;
-    let y = rect.y.max(0.0).round() as u32;
-    let width = rect.w.max(1.0).round() as u32;
-    let height = rect.h.max(1.0).round() as u32;
+    let x = (rect.x * scale).max(0.0).round() as u32;
+    let y = (rect.y * scale).max(0.0).round() as u32;
+    let width = (rect.w * scale).max(1.0).round() as u32;
+    let height = (rect.h * scale).max(1.0).round() as u32;
     let x = x.min(max_w.saturating_sub(1));
     let y = y.min(max_h.saturating_sub(1));
     let width = width.min(max_w.saturating_sub(x)).max(1);
@@ -290,7 +292,24 @@ mod tests {
                 w: 50.0,
                 h: 50.0,
             },
+            1.0,
         );
         assert_eq!(cropped.dimensions(), (10, 10));
+    }
+
+    #[test]
+    fn crop_scales_with_dpi() {
+        let source = RgbaImage::new(200, 200);
+        let cropped = crop_image(
+            &source,
+            CaptureRect {
+                x: 10.0,
+                y: 10.0,
+                w: 50.0,
+                h: 50.0,
+            },
+            2.0,
+        );
+        assert_eq!(cropped.dimensions(), (100, 100));
     }
 }
