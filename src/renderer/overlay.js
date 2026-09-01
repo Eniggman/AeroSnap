@@ -105,6 +105,9 @@ let overlayState = {
   recStartTime: 0,
   recTimerInterval: null,
   isRecPaused: false,
+  pauseStartTime: 0,
+  totalPausedDuration: 0,
+  isStartingRecording: false,
   isNativeRecording: false,
   hasNativeRecording: false,
 };
@@ -126,6 +129,10 @@ function initFromMain(data) {
   overlayState.isSelecting = false;
   overlayState.isResizing = false;
   overlayState.isMoving = false;
+  overlayState.stepCount = 1;
+  overlayState.isStartingRecording = false;
+  overlayState.pauseStartTime = 0;
+  overlayState.totalPausedDuration = 0;
   overlayState.history = [];
   overlayState.redoStack = [];
   overlayState.currentPath = null;
@@ -1482,13 +1489,16 @@ async function startVideoRecording(format = 'mp4') {
 }
 
 async function startNativeRecording(format) {
-  if (overlayState.isNativeRecording) return;
+  if (overlayState.isNativeRecording || overlayState.isStartingRecording) return;
+  overlayState.isStartingRecording = true;
   try {
     overlayState.recordingFormat = format;
-    await window.aeroAPI.recordingStart(overlayState.selection);
+    await window.aeroAPI.recordingStart(overlayState.selection, format);
     overlayState.isNativeRecording = true;
     overlayState.hasNativeRecording = false;
     overlayState.isRecPaused = false;
+    overlayState.totalPausedDuration = 0;
+    overlayState.pauseStartTime = 0;
     if (aeroToolsBar) aeroToolsBar.classList.add('hidden');
     if (aeroActionsBar) aeroActionsBar.classList.add('hidden');
     if (recModeBadge) {
@@ -1507,6 +1517,8 @@ async function startNativeRecording(format) {
     if (aeroToolsBar) aeroToolsBar.classList.remove('hidden');
     if (aeroActionsBar) aeroActionsBar.classList.remove('hidden');
     recordingBar.classList.add('hidden');
+  } finally {
+    overlayState.isStartingRecording = false;
   }
 }
 
@@ -1520,9 +1532,11 @@ async function exportNativeRecording(format, copyPath) {
 }
 
 function startRecTimer() {
+  clearInterval(overlayState.recTimerInterval);
   overlayState.recTimerInterval = setInterval(() => {
     if (overlayState.isRecPaused) return;
-    const elapsed = Math.floor((Date.now() - overlayState.recStartTime) / 1000);
+    const now = Date.now();
+    const elapsed = Math.max(0, Math.floor((now - overlayState.recStartTime - overlayState.totalPausedDuration) / 1000));
     const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
     const secs = String(elapsed % 60).padStart(2, '0');
     recTimer.textContent = `${mins}:${secs}`;
@@ -1533,6 +1547,12 @@ function togglePauseVideo() {
   if (overlayState.isNativeRecording) {
     window.aeroAPI.recordingTogglePause().then((paused) => {
       overlayState.isRecPaused = paused;
+      if (paused) {
+        overlayState.pauseStartTime = Date.now();
+      } else if (overlayState.pauseStartTime) {
+        overlayState.totalPausedDuration += Date.now() - overlayState.pauseStartTime;
+        overlayState.pauseStartTime = 0;
+      }
       btnRecPause.textContent = paused ? '▶ Продолжить' : '⏸ Пауза';
     }).catch((error) => console.error('Error pausing native recording:', error));
     return;
@@ -1541,10 +1561,15 @@ function togglePauseVideo() {
   if (overlayState.mediaRecorder.state === 'recording') {
     overlayState.mediaRecorder.pause();
     overlayState.isRecPaused = true;
+    overlayState.pauseStartTime = Date.now();
     btnRecPause.textContent = '▶ Продолжить';
   } else if (overlayState.mediaRecorder.state === 'paused') {
     overlayState.mediaRecorder.resume();
     overlayState.isRecPaused = false;
+    if (overlayState.pauseStartTime) {
+      overlayState.totalPausedDuration += Date.now() - overlayState.pauseStartTime;
+      overlayState.pauseStartTime = 0;
+    }
     btnRecPause.textContent = '⏸ Пауза';
   }
 }

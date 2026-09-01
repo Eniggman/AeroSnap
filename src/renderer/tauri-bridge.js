@@ -35,16 +35,11 @@
     saveScreenshotAs: (dataUrl) => invoke('capture_save_screenshot_as', { dataUrl }),
     getDesktopSources: () => invoke('capture_get_sources'),
 
-    recordingStart: (rect) => invoke('recording_start', { rect }),
+    recordingStart: (rect, format) => invoke('recording_start', { rect, format }),
     recordingStop: () => invoke('recording_stop'),
     recordingTogglePause: () => invoke('recording_toggle_pause'),
     recordingCancel: () => invoke('recording_cancel'),
     recordingExport: (format, copyPath) => invoke('recording_export', { format, copyPath }),
-
-    saveVideo: (bufferData, format) => invoke('video_save', {
-      bufferData: Array.from(new Uint8Array(bufferData)),
-      format,
-    }),
     playSound: () => {},
     onTriggerScreenshot: (callback) => listenEvent('action:trigger-screenshot', callback),
     onTriggerRecordVideo: (callback) => listenEvent('action:trigger-record-video', callback),

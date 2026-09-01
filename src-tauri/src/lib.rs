@@ -116,6 +116,7 @@ fn overlay_close(
     capture.clear();
     recording.cancel();
     if let Some(window) = app.get_webview_window("overlay") {
+        let _ = window.set_content_protected(false);
         let _ = window.hide();
     }
 }
@@ -124,6 +125,7 @@ fn overlay_close(
 fn recording_start(
     window: tauri::WebviewWindow,
     rect: CaptureRect,
+    format: Option<String>,
     recording: State<'_, recording::RecordingState>,
     capture: State<'_, CaptureState>,
     store: State<'_, SettingsStore>,
@@ -132,7 +134,7 @@ fn recording_start(
         .set_content_protected(true)
         .map_err(|error| error.to_string())?;
     let scale_factor = capture.current().map(|init| init.scale_factor).unwrap_or(1.0);
-    if let Err(error) = recording.start(rect, store.get().video.fps, scale_factor) {
+    if let Err(error) = recording.start(rect, store.get().video.fps, scale_factor, format.as_deref()) {
         let _ = window.set_content_protected(false);
         return Err(error);
     }
@@ -144,10 +146,9 @@ fn recording_stop(
     window: tauri::WebviewWindow,
     recording: State<'_, recording::RecordingState>,
 ) -> Result<(), String> {
-    recording.stop()?;
-    window
-        .set_content_protected(false)
-        .map_err(|error| error.to_string())
+    let result = recording.stop();
+    let _ = window.set_content_protected(false);
+    result
 }
 
 #[tauri::command]
@@ -156,8 +157,12 @@ fn recording_toggle_pause(recording: State<'_, recording::RecordingState>) -> Re
 }
 
 #[tauri::command]
-fn recording_cancel(recording: State<'_, recording::RecordingState>) {
+fn recording_cancel(
+    window: tauri::WebviewWindow,
+    recording: State<'_, recording::RecordingState>,
+) {
     recording.cancel();
+    let _ = window.set_content_protected(false);
 }
 
 #[tauri::command]
@@ -257,6 +262,11 @@ fn show_settings(app: AppHandle) -> Result<(), String> {
 }
 
 fn open_overlay(app: &AppHandle, mode: &str) -> Result<(), String> {
+    let recording = app.state::<recording::RecordingState>();
+    if recording.is_active() {
+        return Ok(());
+    }
+
     let settings = app.state::<SettingsStore>().get();
     app.state::<CaptureState>().begin(mode, settings)?;
 
