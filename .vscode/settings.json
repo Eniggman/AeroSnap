@@ -1,0 +1,6 @@
+{
+  "livePreview.autoRefreshPreview": "OnChangesToSavedFiles",
+  "livePreview.openPreviewTarget": "EmbeddedEditor",
+  "livePreview.showServerStatusNotifications": false,
+  "html.format.enable": true
+}

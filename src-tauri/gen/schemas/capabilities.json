@@ -1,0 +1,1 @@
+{"desktop-capability":{"identifier":"desktop-capability","description":"AeroSnap desktop windows","local":true,"windows":["overlay","settings","recording-controls"],"permissions":["core:default","dialog:default","opener:default","autostart:default","global-shortcut:default"]}}

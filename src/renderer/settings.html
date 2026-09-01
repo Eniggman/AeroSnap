@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AeroSnap v2.0 — Настройки</title>
+  <link rel="stylesheet" href="frutiger-aero.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="icon.png" style="width: 28px; height: 28px; object-fit: contain;" alt="Logo">
+        </div>
+        <div class="brand-title">AeroSnap <span style="font-size: 11px; opacity: 0.65; font-weight: 500;">v2.0</span></div>
+      </div>
+
+      <nav style="display: flex; flex-direction: column; gap: 6px;">
+        <div class="nav-item active" data-tab="general">
+          <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+          Общие
+        </div>
+
+        <div class="nav-item" data-tab="hotkeys">
+          <svg viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="6" x2="6.01" y1="9" y2="9"/><line x1="10" x2="10.01" y1="9" y2="9"/><line x1="14" x2="14.01" y1="9" y2="9"/><line x1="18" x2="18.01" y1="9" y2="9"/><line x1="8" x2="16" y1="15" y2="15"/></svg>
+          Горячие клавиши
+        </div>
+
+        <div class="nav-item" data-tab="screenshots">
+          <svg viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          Скриншоты
+        </div>
+
+        <div class="nav-item" data-tab="video">
+          <svg viewBox="0 0 24 24"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>
+          Видео
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content Panels -->
+    <main class="content-area">
+      <!-- 1. TAB: GENERAL -->
+      <section id="tab-general" class="tab-content active">
+        <h1 class="page-title">Общие настройки</h1>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="gen-auto-start">
+          <span>Запускать AeroSnap при старте Windows</span>
+          <span class="help-tip" title="Автоматический запуск программы в трей при включении компьютера">?</span>
+        </label>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="gen-quiet-mode">
+          <span>Тихий режим работы программы</span>
+          <span class="help-tip" title="Отключает все всплывающие звуки и системные уведомления">?</span>
+        </label>
+
+        <div style="height: 18px;"></div>
+
+        <div class="control-row">
+          <span class="control-label">Действие по клику в трее</span>
+          <select id="gen-tray-action" class="aero-select">
+            <option value="show_selector">Показать панель выбора</option>
+            <option value="screenshot">Сделать скриншот</option>
+            <option value="video">Записать видео</option>
+            <option value="settings">Открыть настройки</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- 2. TAB: HOTKEYS -->
+      <section id="tab-hotkeys" class="tab-content">
+        <h1 class="page-title">Горячие клавиши</h1>
+
+        <div class="control-row">
+          <span class="control-label">Скриншот / выбор области (Скриншот, Видео, GIF)</span>
+          <div class="hotkey-wrapper">
+            <input type="text" id="hk-screenshot" class="hotkey-input" readonly placeholder="Нажмите клавишу">
+            <button class="clear-btn" title="Очистить" data-target="hk-screenshot">×</button>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <span class="control-label">Пауза / Возобновление записи видео</span>
+          <div class="hotkey-wrapper">
+            <input type="text" id="hk-pause" class="hotkey-input" readonly placeholder="Нажмите клавишу">
+            <button class="clear-btn" title="Очистить" data-target="hk-pause">×</button>
+          </div>
+        </div>
+
+        <div style="height: 14px;"></div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="hk-dual-mouse">
+          <span>Две кнопки мыши одновременно для скриншота</span>
+        </label>
+      </section>
+
+      <!-- 3. TAB: SCREENSHOTS -->
+      <section id="tab-screenshots" class="tab-content">
+        <h1 class="page-title">Настройки скриншотов</h1>
+
+        <div class="form-group">
+          <span class="control-label" style="display: block; margin-bottom: 8px;">Папка для сохранения скриншотов</span>
+          <div class="path-picker-row">
+            <input type="text" id="sc-path" class="path-input" readonly>
+            <button class="btn-glass" id="btn-browse-sc">Обзор...</button>
+            <button class="btn-glass" id="btn-open-sc" title="Открыть папку в проводнике">📁</button>
+          </div>
+        </div>
+
+        <div style="height: 8px;"></div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="sc-clipboard" checked>
+          <span>Копировать скриншот в буфер обмена сразу</span>
+        </label>
+
+        <div class="control-row">
+          <span class="control-label">Формат изображения</span>
+          <select id="sc-format" class="aero-select">
+            <option value="png">PNG (Максимальное качество)</option>
+            <option value="jpg">JPG (Меньший размер)</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- 4. TAB: VIDEO -->
+      <section id="tab-video" class="tab-content">
+        <h1 class="page-title">Настройки видео</h1>
+
+        <div class="form-group">
+          <span class="control-label" style="display: block; margin-bottom: 8px;">Папка для сохранения видео</span>
+          <div class="path-picker-row">
+            <input type="text" id="vid-path" class="path-input" readonly>
+            <button class="btn-glass" id="btn-browse-vid">Обзор...</button>
+            <button class="btn-glass" id="btn-open-vid" title="Открыть папку в проводнике">📁</button>
+          </div>
+        </div>
+
+        <div style="height: 8px;"></div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="vid-clipboard" checked>
+          <span>Копировать видео в буфер обмена сразу после записи</span>
+        </label>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="vid-beep" checked>
+          <span>Звуковой сигнал при старте и завершении записи (тихий)</span>
+        </label>
+
+        <div class="control-row">
+          <span class="control-label">Формат сохранения видео</span>
+          <select id="vid-format" class="aero-select">
+            <option value="mp4">MP4 (Рекомендуется)</option>
+            <option value="webm">WebM</option>
+            <option value="gif">GIF Анимация</option>
+          </select>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <span>Настройки сохранены</span>
+  </div>
+
+  <script src="tauri-bridge.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>
