@@ -1,5 +1,5 @@
 /* =========================================================
-   AEROSNAP OVERLAY & ANNOTATIONS CSS (AERO GLASS)
+   AEROSNAP OVERLAY & ANNOTATIONS CSS
    ========================================================= */
 
 * {
@@ -85,7 +85,7 @@ body {
 .handle.sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
 .handle.w  { top: calc(50% - 4.5px); left: -5px; cursor: ew-resize; }
 
-/* Floating Aero Glass Toolbar */
+/* Floating Toolbar */
 /* 1. Horizontal Glass Tools Bar (Bottom of selection) */
 .aero-tools-bar {
   position: absolute;
