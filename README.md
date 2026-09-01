@@ -2,10 +2,10 @@
 
 AeroSnap — лёгкое приложение для создания скриншотов и записи экрана на Windows, вдохновлённое skrinshoter.ru.
 
-[![Скачать AeroSnap 2.1](https://img.shields.io/badge/Скачать_AeroSnap_2.1-Windows_x64-0284c7?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.1.0)
-[![Версия 2.1.0](https://img.shields.io/badge/Версия-v2.1.0-10b981?style=for-the-badge)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.1.0)
+[![Скачать AeroSnap 2.2](https://img.shields.io/badge/Скачать_AeroSnap_2.2-Windows_x64-0284c7?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.2.0)
+[![Версия 2.2.0](https://img.shields.io/badge/Версия-v2.2.0-10b981?style=for-the-badge)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.2.0)
 
-> 🚀 **[Скачать AeroSnap 2.1 (Windows Setup)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.1.0)** — готовый установщик программы доступен на вкладке [Releases](https://github.com/Eniggman/AeroSnap/releases).
+> 🚀 **[Скачать AeroSnap 2.2 (Windows Setup)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.2.0)** — готовый установщик программы доступен на вкладке [Releases](https://github.com/Eniggman/AeroSnap/releases).
 
 ---
 
@@ -19,18 +19,18 @@ AeroSnap — лёгкое приложение для создания скри�
 - ↩️ **История действий:** отмена (Undo) и повтор (Redo) любых изменений, быстрая очистка.
 - 💾 **Умное сохранение:** системный диалог «Сохранить как» для PNG/JPG с автоматическим открытием папки.
 - 📋 **Буфер обмена:** автоматическое копирование готового снимка или видео.
-- 📹 **Запись экрана:** мгновенный нативный захват видео в формате MP4 (H.264 WMF) или GIF-анимаций.
+- 📹 **Запись экрана:** мгновенный нативный захват видео в формате MP4 (H.264 WMF) или GIF-анимаций с компенсацией пауз.
 - ⚙️ **Трей и горячие клавиши:** тихий запуск в трей, автозагрузка Windows, настраиваемые горячие клавиши.
 
 ![Настройки AeroSnap](assets/screenshots/settings.png)
 
 ## 📥 Скачать
 
-Готовая версия 2.1 для Windows доступна во вкладке релизов:
+Готовая версия 2.2 для Windows доступна во вкладке релизов:
 
-- 💾 **[AeroSnap 2.1 Setup (.exe)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.1.0)**
-- 📝 [Список изменений 2.1 (CHANGES_2.1.md)](release/CHANGES_2.1.md)
-- 🔒 Контрольная сумма SHA-256: `F94F9B388CB73BAE8BED427BA867709CD71EFC1F9BF64AE77EFCCE74CFD86B76`
+- 💾 **[AeroSnap 2.2 Setup (.exe)](https://github.com/Eniggman/AeroSnap/releases/tag/v2.2.0)**
+- 📝 [Список изменений 2.2 (CHANGES_2.2.md)](release/CHANGES_2.2.md)
+- 🔒 Контрольная сумма SHA-256: `68F4862AD59F0D1B37C936278350FDFEF27CD79D3CCC96B868BA39C1A4E82EAC`
 
 ## Сборка из исходников
 
