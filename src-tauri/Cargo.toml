@@ -1,6 +1,6 @@
 [package]
 name = "aerosnap"
-version = "2.2.0"
+version = "2.3.0"
 description = "AeroSnap — lightweight Windows screenshot and recording utility"
 authors = ["AeroSnap Team"]
 license = "MIT"

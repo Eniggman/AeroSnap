@@ -16,8 +16,12 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
-fn settings_get(store: State<'_, SettingsStore>) -> Settings {
-    store.get()
+fn settings_get(app: AppHandle, store: State<'_, SettingsStore>) -> Settings {
+    let mut settings = store.get();
+    if let Ok(enabled) = app.autolaunch().is_enabled() {
+        settings.general.auto_start = enabled;
+    }
+    settings
 }
 
 #[tauri::command]
@@ -54,13 +58,10 @@ fn sync_autostart(app: &AppHandle, should_start: bool) -> Result<(), String> {
     #[cfg(debug_assertions)]
     eprintln!("[AutoStart] requested={should_start}, current={is_enabled}");
 
-    if is_enabled != should_start {
-        if should_start {
-            autostart.enable()
-        } else {
-            autostart.disable()
-        }
-        .map_err(|error| error.to_string())?;
+    if should_start {
+        autostart.enable().map_err(|error| error.to_string())?;
+    } else if is_enabled {
+        autostart.disable().map_err(|error| error.to_string())?;
     }
 
     let is_enabled = autostart.is_enabled().map_err(|error| error.to_string())?;
@@ -351,15 +352,78 @@ fn open_settings(app: &AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-fn apply_shortcuts(app: &AppHandle, settings: &Settings) -> Result<(), String> {
-    let screenshot = settings.hotkeys.screenshot.trim();
-    let pause_video = settings.hotkeys.pause_video.trim();
+pub(crate) fn validate_hotkeys(screenshot: &str, video: &str, pause_video: &str) -> Result<(), String> {
+    let screenshot = screenshot.trim();
+    let video = video.trim();
+    let pause_video = pause_video.trim();
+
+    if !screenshot.is_empty() && !video.is_empty() && screenshot.eq_ignore_ascii_case(video) {
+        return Err("Горячие клавиши для скриншота и видео не могут совпадать".into());
+    }
     if !screenshot.is_empty()
         && !pause_video.is_empty()
         && screenshot.eq_ignore_ascii_case(pause_video)
     {
-        return Err("Одна горячая клавиша не может выполнять два действия".into());
+        return Err("Горячие клавиши для скриншота и паузы видео не могут совпадать".into());
     }
+    if !video.is_empty() && !pause_video.is_empty() && video.eq_ignore_ascii_case(pause_video) {
+        return Err("Горячие клавиши для видео и паузы видео не могут совпадать".into());
+    }
+
+    use tauri_plugin_global_shortcut::Shortcut;
+    let s_sc: Option<Shortcut> = if !screenshot.is_empty() {
+        Some(
+            screenshot
+                .parse()
+                .map_err(|error| format!("Недопустимый формат горячей клавиши скриншота «{screenshot}»: {error}"))?,
+        )
+    } else {
+        None
+    };
+    let s_vid: Option<Shortcut> = if !video.is_empty() {
+        Some(
+            video
+                .parse()
+                .map_err(|error| format!("Недопустимый формат горячей клавиши видео «{video}»: {error}"))?,
+        )
+    } else {
+        None
+    };
+    let s_pause: Option<Shortcut> = if !pause_video.is_empty() {
+        Some(
+            pause_video
+                .parse()
+                .map_err(|error| format!("Недопустимый формат горячей клавиши паузы видео «{pause_video}»: {error}"))?,
+        )
+    } else {
+        None
+    };
+
+    if let (Some(ref a), Some(ref b)) = (&s_sc, &s_vid) {
+        if a == b {
+            return Err("Горячие клавиши для скриншота и видео не могут совпадать".into());
+        }
+    }
+    if let (Some(ref a), Some(ref b)) = (&s_sc, &s_pause) {
+        if a == b {
+            return Err("Горячие клавиши для скриншота и паузы видео не могут совпадать".into());
+        }
+    }
+    if let (Some(ref a), Some(ref b)) = (&s_vid, &s_pause) {
+        if a == b {
+            return Err("Горячие клавиши для видео и паузы видео не могут совпадать".into());
+        }
+    }
+
+    Ok(())
+}
+
+fn apply_shortcuts(app: &AppHandle, settings: &Settings) -> Result<(), String> {
+    let screenshot = settings.hotkeys.screenshot.trim();
+    let video = settings.hotkeys.video.trim();
+    let pause_video = settings.hotkeys.pause_video.trim();
+
+    validate_hotkeys(screenshot, video, pause_video)?;
 
     let shortcuts = app.global_shortcut();
     shortcuts
@@ -369,6 +433,11 @@ fn apply_shortcuts(app: &AppHandle, settings: &Settings) -> Result<(), String> {
         if !screenshot.is_empty() {
             shortcuts.register(screenshot).map_err(|error| {
                 format!("Горячая клавиша «{screenshot}» занята или не поддерживается: {error}")
+            })?;
+        }
+        if !video.is_empty() {
+            shortcuts.register(video).map_err(|error| {
+                format!("Горячая клавиша «{video}» занята или не поддерживается: {error}")
             })?;
         }
         if !pause_video.is_empty() {
@@ -474,13 +543,31 @@ pub fn run() {
                         return;
                     }
                     let settings = app.state::<SettingsStore>().get();
-                    if let Ok(configured) = settings.hotkeys.screenshot.parse() {
+                    if let Ok(configured) = settings.hotkeys.screenshot.trim().parse() {
                         if shortcut == &configured {
                             let _ = open_overlay(app, "screenshot");
                             return;
                         }
                     }
-                    if let Ok(configured) = settings.hotkeys.pause_video.parse() {
+                    if let Ok(configured) = settings.hotkeys.video.trim().parse() {
+                        if shortcut == &configured {
+                            let recording = app.state::<recording::RecordingState>();
+                            let overlay_visible = app
+                                .get_webview_window("overlay")
+                                .and_then(|w| w.is_visible().ok())
+                                .unwrap_or(false);
+
+                            if recording.is_active() || overlay_visible {
+                                if let Some(window) = app.get_webview_window("overlay") {
+                                    let _ = window.emit("action:trigger-record-video", ());
+                                }
+                            } else {
+                                let _ = open_overlay(app, "video");
+                            }
+                            return;
+                        }
+                    }
+                    if let Ok(configured) = settings.hotkeys.pause_video.trim().parse() {
                         if shortcut == &configured {
                             if let Some(window) = app.get_webview_window("overlay") {
                                 let _ = window.emit("action:trigger-pause-video", ());
@@ -536,4 +623,66 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("failed to run AeroSnap");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_version_reports_2_3() {
+        assert_eq!(display_version(), "2.3");
+    }
+
+    #[test]
+    fn default_hotkeys_validate_cleanly() {
+        assert!(validate_hotkeys("PageUp", "Home", "Insert").is_ok());
+    }
+
+    #[test]
+    fn hotkey_collisions_are_prevented() {
+        assert!(validate_hotkeys("PageUp", "PageUp", "Insert").is_err());
+        assert!(validate_hotkeys("PageUp", "Home", "Home").is_err());
+        assert!(validate_hotkeys("Insert", "Home", "Insert").is_err());
+        assert!(validate_hotkeys("pageup", "PAGEUP", "Insert").is_err());
+    }
+
+    #[test]
+    fn empty_hotkeys_do_not_collide() {
+        assert!(validate_hotkeys("", "", "").is_ok());
+        assert!(validate_hotkeys("PageUp", "", "").is_ok());
+        assert!(validate_hotkeys("", "Home", "").is_ok());
+        assert!(validate_hotkeys("", "", "Insert").is_ok());
+    }
+
+    #[test]
+    fn hotkey_modifier_permutations_collide() {
+        assert!(validate_hotkeys("Ctrl+Alt+S", "Alt+Ctrl+S", "Insert").is_err());
+        assert!(validate_hotkeys("PageUp", "Shift+Ctrl+F8", "Ctrl+Shift+F8").is_err());
+    }
+
+    #[test]
+    fn invalid_shortcut_syntax_is_rejected() {
+        assert!(validate_hotkeys("NotAValidKey123", "Home", "Insert").is_err());
+        assert!(validate_hotkeys("PageUp", "InvalidKeyXYZ", "Insert").is_err());
+        assert!(validate_hotkeys("PageUp", "Home", "BadKey").is_err());
+    }
+
+    #[test]
+    fn whitespace_padded_hotkeys_are_accepted_and_validated() {
+        assert!(validate_hotkeys("  PageUp  ", " Home ", " Insert ").is_ok());
+    }
+
+    #[test]
+    fn probe_shortcut_keys() {
+        use tauri_plugin_global_shortcut::Shortcut;
+        let keys = [
+            "PageUp", "PageDown", "Home", "End", "Insert", "Delete", "PrintScreen", "Pause",
+            "ScrollLock", "F1", "F12", "Ctrl+Shift+S", "Alt+P", "Ctrl+Delete", "Ctrl+Shift+Z", "Ctrl+Y",
+        ];
+        for k in keys {
+            let res = k.parse::<Shortcut>();
+            assert!(res.is_ok(), "Key '{k}' failed to parse: {:?}", res.err());
+        }
+    }
 }

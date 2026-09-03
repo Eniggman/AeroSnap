@@ -15,6 +15,7 @@ const genQuietMode = document.getElementById('gen-quiet-mode');
 const genTrayAction = document.getElementById('gen-tray-action');
 
 const hkScreenshot = document.getElementById('hk-screenshot');
+const hkVideo = document.getElementById('hk-video');
 const hkPause = document.getElementById('hk-pause');
 const hkDualMouse = document.getElementById('hk-dual-mouse');
 
@@ -63,8 +64,9 @@ function renderSettings() {
   genTrayAction.value = currentSettings.general?.trayClickAction || 'show_selector';
 
   // Hotkeys
-  if (hkScreenshot) hkScreenshot.value = currentSettings.hotkeys?.screenshot || 'Pause';
-  if (hkPause) hkPause.value = currentSettings.hotkeys?.pauseVideo || 'ScrollLock';
+  if (hkScreenshot) hkScreenshot.value = currentSettings.hotkeys?.screenshot !== undefined ? currentSettings.hotkeys.screenshot : 'PageUp';
+  if (hkVideo) hkVideo.value = currentSettings.hotkeys?.video !== undefined ? currentSettings.hotkeys.video : 'Home';
+  if (hkPause) hkPause.value = currentSettings.hotkeys?.pauseVideo !== undefined ? currentSettings.hotkeys.pauseVideo : 'Insert';
   if (hkDualMouse) hkDualMouse.checked = !!currentSettings.hotkeys?.dualMouseClick;
 
   // Screenshots
@@ -95,8 +97,15 @@ async function persistSettings() {
   currentSettings.general.quietMode = genQuietMode.checked;
   currentSettings.general.trayClickAction = genTrayAction.value;
 
-  currentSettings.hotkeys.screenshot = hkScreenshot ? hkScreenshot.value : 'Pause';
-  currentSettings.hotkeys.pauseVideo = hkPause ? hkPause.value : 'ScrollLock';
+  const getHotkeyVal = (input, fallback) => {
+    if (!input) return fallback;
+    if (input.value === 'Нажмите клавиши...') return input.dataset.prev || '';
+    return input.value;
+  };
+
+  currentSettings.hotkeys.screenshot = getHotkeyVal(hkScreenshot, 'PageUp');
+  currentSettings.hotkeys.video = getHotkeyVal(hkVideo, 'Home');
+  currentSettings.hotkeys.pauseVideo = getHotkeyVal(hkPause, 'Insert');
   currentSettings.hotkeys.dualMouseClick = hkDualMouse ? hkDualMouse.checked : false;
 
   currentSettings.screenshots.savePath = scPath.value;
@@ -164,15 +173,29 @@ function setupHotkeyInput(inputEl) {
       return;
     }
 
+    if (!e.ctrlKey && !e.altKey && !e.shiftKey && (e.key === 'Backspace' || e.key === 'Delete')) {
+      inputEl.value = '';
+      inputEl.blur();
+      persistSettings();
+      return;
+    }
+
     const keys = [];
     if (e.ctrlKey) keys.push('Ctrl');
     if (e.shiftKey) keys.push('Shift');
     if (e.altKey) keys.push('Alt');
 
     let keyName = e.key;
-    if (keyName === ' ') keyName = 'Space';
-    else if (keyName === 'Control' || keyName === 'Shift' || keyName === 'Alt') {
+    if (['Control', 'Shift', 'Alt', 'Meta', 'OS'].includes(keyName)) {
       return; // wait for non-modifier key
+    }
+
+    if (e.code && e.code.startsWith('Key') && e.code.length === 4) {
+      keyName = e.code.slice(3).toUpperCase();
+    } else if (e.code && e.code.startsWith('Digit') && e.code.length === 6) {
+      keyName = e.code.slice(5);
+    } else if (keyName === ' ') {
+      keyName = 'Space';
     } else if (keyName.length === 1) {
       keyName = keyName.toUpperCase();
     }
@@ -184,7 +207,7 @@ function setupHotkeyInput(inputEl) {
   });
 }
 
-[hkScreenshot, hkPause].filter(Boolean).forEach(setupHotkeyInput);
+[hkScreenshot, hkVideo, hkPause].filter(Boolean).forEach(setupHotkeyInput);
 
 // Clear buttons
 document.querySelectorAll('.clear-btn').forEach(btn => {

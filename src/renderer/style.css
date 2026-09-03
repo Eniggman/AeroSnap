@@ -73,16 +73,24 @@ body {
 }
 
 .brand-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(145deg, #1e2430 0%, #111620 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 180, 255, 0.35), inset 0 1px 1px #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.15);
   color: white;
   font-size: 18px;
+}
+
+.brand-icon img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .brand-title {

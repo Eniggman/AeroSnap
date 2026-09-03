@@ -18,10 +18,16 @@ pub struct GeneralSettings {
 #[serde(rename_all = "camelCase")]
 pub struct HotkeySettings {
     pub screenshot: String,
+    #[serde(default = "default_video_hotkey")]
+    pub video: String,
     pub pause_video: String,
     pub dual_mouse_click: bool,
     #[serde(default, flatten)]
     pub extra: Map<String, Value>,
+}
+
+fn default_video_hotkey() -> String {
+    "Home".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,8 +79,9 @@ impl Default for Settings {
                 extra: Map::new(),
             },
             hotkeys: HotkeySettings {
-                screenshot: "Pause".into(),
-                pause_video: "ScrollLock".into(),
+                screenshot: "PageUp".into(),
+                video: "Home".into(),
+                pause_video: "Insert".into(),
                 dual_mouse_click: false,
                 extra: Map::new(),
             },
@@ -125,11 +132,21 @@ impl SettingsStore {
             None
         };
 
-        let settings = source
+        let mut settings = source
             .and_then(|candidate| fs::read_to_string(candidate).ok())
             .and_then(|raw| serde_json::from_str::<Value>(&raw).ok())
             .and_then(|value| merge_with_defaults(&defaults, value).ok())
-            .unwrap_or(defaults);
+            .unwrap_or_else(|| defaults.clone());
+
+        if crate::validate_hotkeys(
+            &settings.hotkeys.screenshot,
+            &settings.hotkeys.video,
+            &settings.hotkeys.pause_video,
+        )
+        .is_err()
+        {
+            settings.hotkeys = defaults.hotkeys;
+        }
 
         let store = Self {
             path,
@@ -200,9 +217,54 @@ mod tests {
         });
         let merged = merge_with_defaults(&defaults, incoming).unwrap();
         assert_eq!(merged.hotkeys.screenshot, "F6");
-        assert_eq!(merged.hotkeys.pause_video, "ScrollLock");
+        assert_eq!(merged.hotkeys.video, "Home");
+        assert_eq!(merged.hotkeys.pause_video, "Insert");
         assert_eq!(merged.screenshots.format, "jpg");
         assert!(merged.screenshots.auto_clipboard);
+    }
+
+    #[test]
+    fn colliding_legacy_hotkeys_are_reset_to_defaults() {
+        let defaults = Settings::default();
+        let incoming = serde_json::json!({
+            "hotkeys": {
+                "screenshot": "PageUp",
+                "pauseVideo": "Home"
+            }
+        });
+        let mut merged = merge_with_defaults(&defaults, incoming).unwrap();
+        if crate::validate_hotkeys(
+            &merged.hotkeys.screenshot,
+            &merged.hotkeys.video,
+            &merged.hotkeys.pause_video,
+        )
+        .is_err()
+        {
+            merged.hotkeys = defaults.hotkeys;
+        }
+        assert_eq!(merged.hotkeys.screenshot, "PageUp");
+        assert_eq!(merged.hotkeys.video, "Home");
+        assert_eq!(merged.hotkeys.pause_video, "Insert");
+    }
+
+    #[test]
+    fn default_hotkeys_are_valid_shortcuts() {
+        let defaults = Settings::default();
+        let _: tauri_plugin_global_shortcut::Shortcut = defaults
+            .hotkeys
+            .screenshot
+            .parse()
+            .expect("PageUp should parse as a valid Shortcut");
+        let _: tauri_plugin_global_shortcut::Shortcut = defaults
+            .hotkeys
+            .video
+            .parse()
+            .expect("Home should parse as a valid Shortcut");
+        let _: tauri_plugin_global_shortcut::Shortcut = defaults
+            .hotkeys
+            .pause_video
+            .parse()
+            .expect("Insert should parse as a valid Shortcut");
     }
 
     #[test]

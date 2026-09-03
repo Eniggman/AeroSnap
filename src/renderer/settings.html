@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AeroSnap v2.2 — Настройки</title>
+  <title>AeroSnap v2.3 — Настройки</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,9 +12,9 @@
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-icon">
-          <img src="icon.png" style="width: 28px; height: 28px; object-fit: contain;" alt="Logo">
+          <img src="icon.png" style="width: 24px; height: 24px; object-fit: contain;" alt="Logo">
         </div>
-        <div class="brand-title">AeroSnap <span style="font-size: 11px; opacity: 0.65; font-weight: 500;">v2.2</span></div>
+        <div class="brand-title">AeroSnap <span style="font-size: 11px; opacity: 0.65; font-weight: 500;">v2.3</span></div>
       </div>
 
       <nav style="display: flex; flex-direction: column; gap: 6px;">
@@ -76,10 +76,18 @@
         <h1 class="page-title">Горячие клавиши</h1>
 
         <div class="control-row">
-          <span class="control-label">Скриншот / выбор области (Скриншот, Видео, GIF)</span>
+          <span class="control-label">Сделать скриншот (вызов скриншотера)</span>
           <div class="hotkey-wrapper">
             <input type="text" id="hk-screenshot" class="hotkey-input" readonly placeholder="Нажмите клавишу">
             <button class="clear-btn" title="Очистить" data-target="hk-screenshot">×</button>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <span class="control-label">Запись видео (старт / остановка)</span>
+          <div class="hotkey-wrapper">
+            <input type="text" id="hk-video" class="hotkey-input" readonly placeholder="Нажмите клавишу">
+            <button class="clear-btn" title="Очистить" data-target="hk-video">×</button>
           </div>
         </div>
 

@@ -169,9 +169,36 @@ function initFromMain(data) {
     window.aeroAPI.overlayReady();
   }
 
-  if (overlayState.mode === 'video' && btnRecordVideo) {
-    btnRecordVideo.classList.add('active');
+  if (overlayState.mode === 'screenshot') {
+    if (btnRecordVideo) {
+      btnRecordVideo.style.display = 'none';
+      btnRecordVideo.classList.add('hidden');
+      btnRecordVideo.classList.remove('active');
+    }
+    if (btnRecordGif) {
+      btnRecordGif.style.display = 'none';
+      btnRecordGif.classList.add('hidden');
+    }
+  } else {
+    if (btnRecordVideo) {
+      btnRecordVideo.style.display = '';
+      btnRecordVideo.classList.remove('hidden');
+      if (overlayState.mode === 'video') {
+        btnRecordVideo.classList.add('active');
+      } else {
+        btnRecordVideo.classList.remove('active');
+      }
+    }
+    if (btnRecordGif) {
+      btnRecordGif.style.display = '';
+      btnRecordGif.classList.remove('hidden');
+    }
   }
+
+  const pauseKey = overlayState.settings?.hotkeys?.pauseVideo || 'Insert';
+  const videoKey = overlayState.settings?.hotkeys?.video || 'Home';
+  if (btnRecPause) btnRecPause.title = `Пауза / Продолжить (${pauseKey})`;
+  if (btnRecStop) btnRecStop.title = `Сохранить запись (${videoKey})`;
 }
 
 function configureCanvases() {
@@ -213,12 +240,15 @@ function setupWindowEvents() {
     } else if (e.code === 'Space' && !e.target.closest('input, textarea, [contenteditable="true"]')) {
       overlayState.isSpacePressed = true;
       document.body.classList.add('mode-moving');
-    } else if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+    } else if ((e.ctrlKey && (e.code === 'KeyY' || e.key.toLowerCase() === 'y')) || (e.ctrlKey && e.shiftKey && (e.code === 'KeyZ' || e.key.toLowerCase() === 'z'))) {
+      e.preventDefault();
+      redoLastAction();
+    } else if (e.ctrlKey && !e.shiftKey && (e.code === 'KeyZ' || e.key.toLowerCase() === 'z')) {
       e.preventDefault();
       undoLastAction();
-    } else if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+    } else if (e.ctrlKey && (e.code === 'KeyC' || e.key.toLowerCase() === 'c')) {
       if (overlayState.selection) copyScreenshot();
-    } else if (e.ctrlKey && e.key.toLowerCase() === 's') {
+    } else if (e.ctrlKey && (e.code === 'KeyS' || e.key.toLowerCase() === 's')) {
       if (overlayState.selection) saveScreenshot();
     }
   });
@@ -388,6 +418,7 @@ function setupToolbarEvents() {
   if (btnRecordVideo) {
     btnRecordVideo.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (overlayState.mode === 'screenshot') return;
       startVideoRecording('mp4');
     });
   }
@@ -395,6 +426,7 @@ function setupToolbarEvents() {
   if (btnRecordGif) {
     btnRecordGif.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (overlayState.mode === 'screenshot') return;
       startVideoRecording('gif');
     });
   }
@@ -1616,7 +1648,19 @@ if (window.aeroAPI) {
     if (overlayState.isNativeRecording) {
       stopVideoRecording();
     } else if (!overlayState.mediaRecorder || overlayState.mediaRecorder.state === 'inactive') {
-      startVideoRecording();
+      if (overlayState.mode === 'screenshot') {
+        overlayState.mode = 'video';
+        if (btnRecordVideo) {
+          btnRecordVideo.style.display = '';
+          btnRecordVideo.classList.remove('hidden');
+          btnRecordVideo.classList.add('active');
+        }
+        if (btnRecordGif) {
+          btnRecordGif.style.display = '';
+          btnRecordGif.classList.remove('hidden');
+        }
+      }
+      startVideoRecording(overlayState.settings?.video?.format || 'mp4');
     } else {
       stopVideoRecording();
     }
