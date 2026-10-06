@@ -47,4 +47,8 @@ npm run build
 
 [MIT](LICENSE)
 
+---
 
+## English summary
+
+AeroSnap is a lightweight screenshot and screen recording app for Windows, built with Rust and Tauri. It captures a selected area of the screen with High-DPI support, lets you annotate (pencil, arrows, numbered steps, rectangles, text) and blur sensitive data, and records the screen to MP4 (H.264) or GIF. It runs from the system tray with configurable hotkeys and copies results to the clipboard; a ready-made Windows x64 installer is available on the Releases page.
