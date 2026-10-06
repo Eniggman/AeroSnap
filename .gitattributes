@@ -1,0 +1,9 @@
+# GitHub Linguist: count Rust (src-tauri) as the primary language.
+# Frontend renderer scripts and asset build helpers are excluded from language stats.
+src/renderer/*.js linguist-detectable=false
+assets/*.js linguist-detectable=false
+
+# Generated / lock files
+src-tauri/gen/** linguist-generated=true
+package-lock.json linguist-generated=true
+src-tauri/Cargo.lock linguist-generated=true
